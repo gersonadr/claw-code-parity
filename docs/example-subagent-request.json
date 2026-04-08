@@ -1,0 +1,34 @@
+{
+  "model": "claude-3-7-sonnet-latest",
+  "max_tokens": 16000,
+  "stream": true,
+  "system": "You are an interactive agent that helps users with software engineering tasks.\n\n... (fresh system prompt — no history from the parent conversation) ...",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Run `mvn test` and report whether the tests pass. If any fail, include the full error output."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "bash",
+      "description": "Execute a shell command in the current workspace.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string" },
+          "timeout": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "tool_choice": { "type": "auto" },
+  "betas": ["claude-code-20250219", "prompt-caching-scope-2026-01-05"]
+}

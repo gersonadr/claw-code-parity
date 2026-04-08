@@ -9,7 +9,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Write a unit test for the `add` method in src/calculator.rs"
+          "text": "Write a unit test for the `createIssue` method in src/IssueController.java"
         }
       ]
     },
@@ -25,7 +25,7 @@
           "id": "toolu_01ABC",
           "name": "read_file",
           "input": {
-            "path": "src/calculator.rs"
+            "path": "src/IssueController.java"
           }
         }
       ]
@@ -40,7 +40,7 @@
           "content": [
             {
               "type": "text",
-              "text": "pub struct Calculator;\n\nimpl Calculator {\n    pub fn add(&self, a: i64, b: i64) -> i64 {\n        a + b\n    }\n}\n"
+              "text": "public class IssueController {\n    private final IssueRepository repository;\n\n    public IssueController(IssueRepository repository) {\n        this.repository = repository;\n    }\n\n    public Issue createIssue(String title, String priority) {\n        if (title == null || title.isBlank()) {\n            throw new IllegalArgumentException(\"Title is required\");\n        }\n        Issue issue = new Issue(UUID.randomUUID().toString(), title, priority, \"OPEN\");\n        return repository.save(issue);\n    }\n}\n"
             }
           ]
         }

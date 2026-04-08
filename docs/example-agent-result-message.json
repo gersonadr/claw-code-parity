@@ -1,0 +1,119 @@
+{
+  "model": "claude-3-7-sonnet-latest",
+  "max_tokens": 16000,
+  "stream": true,
+  "system": "... (same system prompt as the first request) ...",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Write a unit test for the `createIssue` method in src/IssueController.java"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Let me read the file first."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_01ABC",
+          "name": "read_file",
+          "input": { "path": "src/IssueController.java" }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01ABC",
+          "is_error": false,
+          "content": [
+            {
+              "type": "text",
+              "text": "public class IssueController {\n    private final IssueRepository repository;\n    ...\n}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "`createIssue` validates that a title is present, then returns a new issue with status `OPEN`. I'll create a JUnit 5 test class in the standard test source tree."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_02DEF",
+          "name": "write_file",
+          "input": {
+            "path": "src/test/java/IssueControllerTest.java",
+            "content": "..."
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_02DEF",
+          "is_error": false,
+          "content": [
+            {
+              "type": "text",
+              "text": "File written successfully."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Test file written. Let me run the tests to confirm everything passes."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_03GHI",
+          "name": "Agent",
+          "input": {
+            "description": "Run Maven tests and report results",
+            "prompt": "Run `mvn test` and report whether the tests pass. If any fail, include the full error output."
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_03GHI",
+          "is_error": false,
+          "content": [
+            {
+              "type": "text",
+              "text": "Tests passed. 2 tests run, 0 failures, 0 errors.\n\n[INFO] BUILD SUCCESS"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tools": ["... (same tool definitions as the first request) ..."],
+  "tool_choice": { "type": "auto" },
+  "betas": ["claude-code-20250219", "prompt-caching-scope-2026-01-05"]
+}

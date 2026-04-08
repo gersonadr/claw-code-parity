@@ -1,0 +1,29 @@
+{
+  "id": "msg_03GHI",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-7-sonnet-latest",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "Test file written. Let me run the tests to confirm everything passes."
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_03GHI",
+      "name": "Agent",
+      "input": {
+        "description": "Run Maven tests and report results",
+        "prompt": "Run `mvn test` and report whether the tests pass. If any fail, include the full error output."
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 412,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 2104,
+    "output_tokens": 44
+  }
+}
