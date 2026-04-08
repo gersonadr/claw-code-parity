@@ -8,16 +8,15 @@
   "content": [
     {
       "type": "text",
-      "text": "`createIssue` validates that a title is present, then returns a new issue with status `open`. I'll append a test suite directly to the file."
+      "text": "`createIssue` validates that a title is present, then returns a new issue with status `OPEN`. I'll create a JUnit 5 test class in the standard test source tree."
     },
     {
       "type": "tool_use",
       "id": "toolu_02DEF",
-      "name": "edit_file",
+      "name": "write_file",
       "input": {
-        "path": "src/IssueController.ts",
-        "old_string": "  }\n}",
-        "new_string": "  }\n}\n\ndescribe('IssueController', () => {\n  let controller: IssueController;\n\n  beforeEach(() => {\n    controller = new IssueController();\n  });\n\n  describe('createIssue', () => {\n    it('returns a new open issue with the given title and priority', () => {\n      const issue = controller.createIssue('Login page crashes', 'high');\n      expect(issue.title).toBe('Login page crashes');\n      expect(issue.priority).toBe('high');\n      expect(issue.status).toBe('open');\n      expect(issue.id).toBeDefined();\n    });\n\n    it('throws when title is empty', () => {\n      expect(() => controller.createIssue('', 'low')).toThrow('Title is required');\n    });\n  });\n});"
+        "path": "src/test/java/IssueControllerTest.java",
+        "content": "import org.junit.jupiter.api.BeforeEach;\nimport org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;\n\nclass IssueControllerTest {\n\n    private IssueController controller;\n\n    @BeforeEach\n    void setUp() {\n        controller = new IssueController();\n    }\n\n    @Test\n    void createIssue_returnsNewOpenIssueWithGivenTitleAndPriority() {\n        Issue issue = controller.createIssue(\"Login page crashes\", \"HIGH\");\n\n        assertNotNull(issue.getId());\n        assertEquals(\"Login page crashes\", issue.getTitle());\n        assertEquals(\"HIGH\", issue.getPriority());\n        assertEquals(\"OPEN\", issue.getStatus());\n    }\n\n    @Test\n    void createIssue_throwsWhenTitleIsBlank() {\n        IllegalArgumentException ex = assertThrows(\n            IllegalArgumentException.class,\n            () -> controller.createIssue(\"\", \"LOW\")\n        );\n        assertEquals(\"Title is required\", ex.getMessage());\n    }\n}\n"
       }
     }
   ],
@@ -25,6 +24,6 @@
     "input_tokens": 2104,
     "cache_creation_input_tokens": 0,
     "cache_read_input_tokens": 1840,
-    "output_tokens": 112
+    "output_tokens": 118
   }
 }
