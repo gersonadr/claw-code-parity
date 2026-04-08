@@ -1,0 +1,30 @@
+{
+  "id": "msg_02DEF",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-7-sonnet-latest",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "The `add` method takes two `i64` arguments and returns their sum. I'll append a `#[cfg(test)]` module directly to the file."
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_02DEF",
+      "name": "edit_file",
+      "input": {
+        "path": "src/calculator.rs",
+        "old_string": "        a + b\n    }\n}",
+        "new_string": "        a + b\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn test_add() {\n        let calc = Calculator;\n        assert_eq!(calc.add(2, 3), 5);\n        assert_eq!(calc.add(-1, 1), 0);\n        assert_eq!(calc.add(0, 0), 0);\n    }\n}"
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 2104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1840,
+    "output_tokens": 87
+  }
+}
