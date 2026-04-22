@@ -1,0 +1,70 @@
+Hey everyone, let's talk about agentic AI. We've seen a team prompted a microservice from scratch in a single session. Another team automated a migration that would otherwise take weeks.
+
+So I started reading about Harness — skills, workflows, agents — hoping to understand the magic behind it. But I felt like I was missing something fundamental. I didn't fully understand how these agentic AI tools work. Like, how does the AI decide to start an agent? Better yet, what even is an agent? Do agents communicate with each other? What's the difference between an Explorer agent and a Planner agent? Do they share the same context window?
+
+Then in the same week Claude Code gets leaked. You probably heard about it on the news. So what if instead of reading these markdown files and making assumptions on how these things work, we focus on understanding the tool first?
+This is what this talk is.
+
+I promise 2 things if you pay attention. One: you will build a mental model of how agentic AI tools work under the hood. And two: these insights will serve you when you start building your own harness.
+
+Cool.
+
+In the middle we have an LLM — this could be OpenAI, Anthropic's Claude, whatever model you're using — which you access using an API key.
+
+On the top we have our tool set which comes pre-installed when you install, say, Codex, open code, etc.
+
+On the bottom we have the session aka message history, which is an append only JSONL format, and on the right side is the context window.
+
+These 3, the tool set, the context window and session are the state which your CLI tool maintains on your local environment.
+
+So let's say I open Claude Code, and type in "write a unit test". The CLI tool sends a message in a certain format. Please notice how the message has a list of available tools, and I can show the actual message, 1s, you can see that we describe the tools for the LLM to use, also the params, and notice this Agent tool which we'll discuss in a second.
+
+From now on, I'll refer to the Agentic CLI as client and the LLM as server.
+
+The client writes the message to the session / aka message history, and sends the entire message history to the LLM.
+
+The LLM will then start a long lived HTTP connection called SSE, or server sent events, and the client will handle the events coming from the server. So, message start, message delta, and so on, and the client updates the Terminal UI. Once it receives a message stop, it saves it in the session.
+
+Also, please note that the message delta — the event just before the stop — contains the output and input tokens, so the client updates the context window count.
+
+Now the client knows that it should read a file, so it executes the read file tool and adds the output of the read file tool to the session, and again, sends the entire session to the LLM.
+
+Again, LLM will process, sends the response to the client, this time to write a file. The client executes the tool, appends the result, and calls the LLM again.
+
+And so the process continues, until something interesting happens. This time, the LLM asked to use the Agent tool. What happens?
+
+The client will then create a new thread, this thread will then communicate with the LLM. It's a set & forget pattern.
+
+There are a few differences between the background agent and the foreground agent. Let's say foreground is the agent the user interacts with.
+
+First, the background agent doesn't have Agent tool in its allowed list. So this answers the question of loop detection: the client structurally enforces agents up to depth 1. Another difference is this max iteration count: technically the foreground agent is also limited by Integer MAX_VALUE, meaning, infinite iterations, but the background is supposed to be short lived, so, it enforces a hard stop at 32. Also, notice the background agent has a clean session, with only one text task, and this task is the exact prompt the LLM informed previously.
+
+So the background agent sends the session to the LLM, and LLM responds with another tool use, so the loop continues.
+
+One key insight for me that you might have already realized: all communications with the LLM are stateless. It doesn't know if it's talking to a foreground or a background agent. Similarly, the agent itself doesn't know what they are, and I find this design to be elegant.
+
+So, this time the background agent runs the bash tool, which executes the newly created test class. Background agent adds the result to the session, and sends again to the LLM, and so on.
+
+Now here's the thing — the Agent tool doesn't block. It returns immediately with a manifest, which is a json object containing the agent id, the manifest file path and the output file path, both on disk. If the LLM needs to wait for the background to finish, it calls read_file on that manifest path and checks until status = "completed". I have a small example.
+
+This answered another question I had about how agents communicate. For this implementation it's file-based — the background agent writes its output to disk, and the LLM can read it when it needs to. Other tools, such as Opencode, use http response instead. But that's just implementation details.
+
+Now notice what happened on the right side: the context window counter has reached a critical threshold, and now the client will perform a compact operation. This operation takes all the messages (excluding the 4 most recent ones) and summarizes into one. This summary message has a list of files read, written, list of prompts by the user and the LLM, but all truncated at 160 characters. So it's a lossy compression.
+
+While I was reading I was curious as to why the client doesn't submit the message queue for the LLM to compress, and the reason is quite simple: it doesn't want to spend too many tokens specially because the context is almost full. Plus, this is a blocking operation on this Conversation loop, it must be fast, and let's not forget the LLM still has the full context of the last 4 messages, so it knows what to do.
+
+The client sends the entire session again, and the LLM returns with only text, meaning, no tool use, and the exit criteria for this loop is met. So right now the client is waiting for the prompt by the user.
+
+So this is the pseudo code of what we just discussed. Start an infinite loop, increment interactions, call LLM, listen to events, build the AssistantMessage struct from the events, save on the session, if no tool use, break, else execute the tool.
+
+What I didn't cover is that this client supports pre tool hook and post tool hook. So say you want audit logs of Jenkins tools, and after the job is done, send a Slack message. Or maybe you want to add another layer of safety, and check if the client will remove a file it's not supposed to, so the pre hook outputs something like "Denied" and exits with a deny code, so the LLM knows it's not allowed.
+
+Then we also have the permission_policy which is as you would expect. One point about the permission policy: if you are a foreground agent, you have access to the Prompter, which lets you ask questions to the user. So if the tool policy is Prompt — that's the actual enum value — it may proceed. But the background agent doesn't have the prompter object, so they are always auto-approved or auto-denied, given it's a background process that should not be interrupted.
+
+I still had one question left unanswered, which is what is the difference between an Explorer agent and a Planner agent. There are 2 main differences: allowed tools and system prompt. Here we have some examples for a few clients, notice how the nomenclature varies but both have a general agent and an explore agent, who can only do read-only tasks.
+
+So I had another question then: how does the LLM know which agent the client is able to start. Does the client also send a list of supported agents? The answer for this implementation is no: the LLM does provide an agent type on the message payload, but it's a free text. The client then normalizes this value and maps to their list of available agent types. If you can imagine a switch statement where the first clause is "does it contain plan", etc, and the default clause, aka fallback agent, is the general purpose.
+
+This is not all bad, but as best practice is always better to limit the tooling and scope of your agents to the task to avoid inconsistencies.
+
+If I have some time, I can briefly talk about env isolation (another thing I was wondering about), and the Fork() operation which explains how some agentic tools support restoring to a particular snapshot. Else, if anyone has any questions, please feel free.
